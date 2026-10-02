@@ -1,0 +1,59 @@
+name: update-itic-feed
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-itic-feed
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Generate iTIC GPX/GeoJSON feed
+        run: |
+          mkdir -p public
+          python scripts/itic_to_gpx.py \
+            --url "https://event.longdo.com/feed/json" \
+            --gpx public/itic_events.gpx \
+            --geojson public/itic_events.geojson \
+            --json public/itic_events.json \
+            --debug /tmp/itic_debug.json \
+            --max-events 1000
+
+      - name: Commit updated feed files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add public/itic_events.gpx || true
+          git add public/itic_events.geojson || true
+          git add public/itic_events.json || true
+
+          if git diff --cached --quiet; then
+            echo "No feed changes to commit."
+          else
+            git commit -m "chore: update iTIC feed [skip ci]"
+            git pull --rebase
+            git push
+          fi
