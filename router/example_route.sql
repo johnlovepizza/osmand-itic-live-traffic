@@ -1,0 +1,26 @@
+-- Conceptual traffic-aware routing query.
+--
+-- This assumes you already loaded OSM lines into planet_osm_line
+-- and created pgRouting source/target columns.
+--
+-- The important idea:
+-- cost = distance / effective_speed
+--
+-- If iTIC says a road is slow, effective_speed decreases.
+-- If iTIC says a road is blocked, cost becomes impossible.
+
+-- SELECT *
+-- FROM pgr_dijkstra(
+--     'SELECT
+--          osm_id AS id,
+--          source,
+--          target,
+--          ST_Length(way) / COALESCE(t.speed_kmh, 30) AS cost
+--      FROM planet_osm_line l
+--      LEFT JOIN traffic_speed t
+--        ON l.osm_id = t.osm_way_id
+--      WHERE l.highway IS NOT NULL',
+--     :start_vertex,
+--     :end_vertex,
+--     directed := true
+-- );
