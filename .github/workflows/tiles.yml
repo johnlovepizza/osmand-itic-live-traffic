@@ -1,0 +1,17 @@
+on:
+  schedule: [{cron: '*/10 * * * *'}]
+  workflow_dispatch:
+permissions: {contents: write}
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install pillow
+      - run: python3 render_tiles.py
+      - run: |
+          git config user.name bot
+          git config user.email bot@bot
+          git add public
+          git commit -m tiles || true
+          git push
