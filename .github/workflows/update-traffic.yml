@@ -21,7 +21,7 @@ jobs:
           node-version: '20'
 
       - name: Fetch and generate traffic data
-        run: node itic-live-traffic.js
+        run: node itic-traffic-ts/itic-live-traffic.js
 
       - name: Commit and push changes
         run: |
